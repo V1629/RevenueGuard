@@ -1,0 +1,131 @@
+.agent-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  height: calc(100vh - 180px);
+}
+
+.activity-feed-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.feed-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.feed-item {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  display: flex;
+  gap: 1rem;
+}
+
+.feed-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.feed-icon.detected { background: rgba(59, 130, 246, 0.1); color: var(--info); }
+.feed-icon.diagnosed { background: rgba(161, 161, 170, 0.1); color: var(--text-secondary); }
+.feed-icon.executing { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.feed-icon.recovered { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.feed-icon.stopped { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+.feed-icon.escalated { background: rgba(233, 69, 96, 0.1); color: var(--accent-primary); }
+
+.feed-content {
+  flex: 1;
+}
+
+.feed-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.feed-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.feed-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.feed-desc {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.decision-card {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  border-left: 2px solid var(--accent-primary);
+}
+
+.decision-header {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-primary);
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.decision-reasoning {
+  font-size: 0.875rem;
+  font-style: italic;
+  color: #d4d4d8;
+}
+
+.simulator-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.form-control {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: white;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
