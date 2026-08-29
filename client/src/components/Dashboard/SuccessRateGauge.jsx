@@ -1,36 +1,38 @@
-import { useEffect, useRef } from 'react';
-import anime from 'animejs';
+import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import '../../styles/dashboard.css';
 
 export default function SuccessRateGauge({ rate = 85 }) {
   const circleRef = useRef(null);
-  const textRef = useRef(null);
+  const [displayRate, setDisplayRate] = useState(0);
   const strokeDasharray = 283; // 2 * pi * r (45)
 
   useEffect(() => {
     const targetOffset = strokeDasharray - (strokeDasharray * rate) / 100;
-    
-    // Animate the circle stroke
-    anime({
-      targets: circleRef.current,
-      strokeDashoffset: [strokeDasharray, targetOffset],
-      duration: 2000,
-      easing: 'easeOutQuart',
-      delay: 500
-    });
 
-    // Animate the text number
-    anime({
-      targets: textRef.current,
-      innerHTML: [0, rate],
-      round: 1, // Round to integer
-      duration: 2000,
-      easing: 'easeOutQuart',
-      delay: 500,
-      update: function(a) {
-        textRef.current.innerHTML = a.animations[0].currentValue + '%';
-      }
-    });
+    // Animate circle stroke with plain JS
+    if (circleRef.current) {
+      const start = performance.now();
+      const duration = 2000;
+      const from = strokeDasharray;
+      const to = targetOffset;
+
+      const step = (now) => {
+        const elapsed = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - elapsed, 4); // easeOutQuart
+        const currentOffset = from + (to - from) * eased;
+        
+        if (circleRef.current) {
+          circleRef.current.setAttribute('stroke-dashoffset', currentOffset);
+        }
+        setDisplayRate(Math.round(rate * eased));
+
+        if (elapsed < 1) {
+          requestAnimationFrame(step);
+        }
+      };
+      requestAnimationFrame(step);
+    }
   }, [rate]);
 
   // Determine color based on rate
@@ -73,8 +75,8 @@ export default function SuccessRateGauge({ rate = 85 }) {
             flexDirection: 'column'
           }}
         >
-          <span ref={textRef} style={{ fontSize: '2.5rem', fontWeight: 700, color: 'white' }}>
-            0%
+          <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'white' }}>
+            {displayRate}%
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {rate >= 90 ? 'Healthy' : rate >= 80 ? 'Degraded' : 'Critical'}

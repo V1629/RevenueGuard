@@ -1,6 +1,5 @@
-import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
-import anime from 'animejs';
+import { motion } from 'framer-motion';
 import '../../styles/dashboard.css';
 
 export default function RecoveryFunnel({ metrics }) {
@@ -15,20 +14,28 @@ export default function RecoveryFunnel({ metrics }) {
 
   const maxCount = Math.max(...data.map(d => d.count), 1);
 
-  // Anime.js for complex bar width animation
+  // Animate bar widths with requestAnimationFrame (safe alternative to anime.js)
   useEffect(() => {
-    if (barsRef.current.length > 0) {
-      anime({
-        targets: barsRef.current,
-        width: (el) => {
-          const count = parseInt(el.dataset.count);
-          return `${(count / maxCount) * 100}%`;
-        },
-        duration: 1500,
-        easing: 'easeOutElastic(1, .8)',
-        delay: anime.stagger(200)
+    const start = performance.now();
+    const duration = 1500;
+
+    const step = (now) => {
+      const elapsed = Math.min((now - start) / duration, 1);
+      // easeOutElastic approximation
+      const eased = elapsed === 1 ? 1 : 1 - Math.pow(2, -10 * elapsed) * Math.cos((elapsed * 10 - 0.75) * (2 * Math.PI / 3));
+
+      barsRef.current.forEach((el, i) => {
+        if (!el) return;
+        const count = parseInt(el.dataset.count);
+        const targetWidth = (count / maxCount) * 100;
+        el.style.width = `${targetWidth * eased}%`;
       });
-    }
+
+      if (elapsed < 1) {
+        requestAnimationFrame(step);
+      }
+    };
+    requestAnimationFrame(step);
   }, [metrics]);
 
   return (

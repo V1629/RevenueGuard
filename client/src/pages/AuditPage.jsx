@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Filter, RefreshCw } from 'lucide-react';
-import '../../styles/audit.css';
+import '../styles/audit.css';
 
 export default function AuditPage() {
   const [entries, setEntries] = useState([]);
