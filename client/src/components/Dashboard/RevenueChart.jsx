@@ -2,8 +2,8 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { motion } from 'framer-motion';
 import '../../styles/dashboard.css';
 
-// Synthetic time-series data for demo
-const data = [
+// Synthetic time-series data for demo — base template
+const BASE_DATA = [
   { time: '10:00', recovered: 4000, failed: 2400 },
   { time: '10:30', recovered: 3000, failed: 1398 },
   { time: '11:00', recovered: 2000, failed: 9800 },
@@ -14,15 +14,15 @@ const data = [
 ];
 
 const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
+  if (active && payload && payload.length >= 2) {
     return (
       <div className="glass-panel" style={{ padding: '1rem', border: '1px solid var(--border-glass)' }}>
         <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{label}</p>
         <p style={{ margin: 0, color: 'var(--success)', fontWeight: 'bold' }}>
-          Recovered: ₹{payload[0].value}
+          Recovered: ₹{payload[0]?.value || 0}
         </p>
         <p style={{ margin: 0, color: 'var(--danger)', fontWeight: 'bold' }}>
-          Failed: ₹{payload[1].value}
+          Failed: ₹{payload[1]?.value || 0}
         </p>
       </div>
     );
@@ -31,8 +31,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function RevenueChart({ liveAmount = 0 }) {
-  // Add live amount to the latest data point for demo purposes
-  const currentData = [...data];
+  // Deep-clone the base data so we never mutate the original array
+  const currentData = BASE_DATA.map(d => ({ ...d }));
+  
   if (liveAmount > 0) {
     currentData[currentData.length - 1].recovered += liveAmount;
   }

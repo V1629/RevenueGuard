@@ -19,7 +19,7 @@ function App() {
       const res = await fetch('http://localhost:3001/api/governance/kill-switch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'activate', reason: 'Manual kill switch via UI' })
+        body: JSON.stringify({ active: true })
       });
       if (res.ok) {
         setKillSwitchActive(true);
@@ -36,7 +36,7 @@ function App() {
       const res = await fetch('http://localhost:3001/api/governance/kill-switch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'deactivate' })
+        body: JSON.stringify({ active: false })
       });
       if (res.ok) {
         setKillSwitchActive(false);

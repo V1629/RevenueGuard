@@ -6,28 +6,65 @@ import SuccessRateGauge from '../components/Dashboard/SuccessRateGauge';
 
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState(null);
+  const [error, setError] = useState(null);
   
   useEffect(() => {
+    let source;
+    
     // Fetch initial metrics
     fetch('http://localhost:3001/api/metrics/summary')
       .then(res => res.json())
       .then(data => setMetrics(data))
-      .catch(err => console.error("Failed to fetch metrics:", err));
+      .catch(err => {
+        console.error("Failed to fetch metrics:", err);
+        setError(err.message);
+      });
       
     // Listen for SSE updates
-    const source = new EventSource('http://localhost:3001/api/events');
+    try {
+      source = new EventSource('http://localhost:3001/api/events');
+      
+      source.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data);
+          if (['RECOVERED', 'BATCH_COMPLETE', 'STOPPED', 'ESCALATED'].includes(event.type)) {
+            fetch('http://localhost:3001/api/metrics/summary')
+              .then(res => res.json())
+              .then(data => setMetrics(data))
+              .catch(() => {});
+          }
+        } catch (parseErr) {
+          // Ignore malformed SSE events
+        }
+      };
+      
+      source.onerror = () => {
+        // SSE connection lost — don't crash, just stop listening
+        source.close();
+      };
+    } catch (e) {
+      console.error("SSE connection failed:", e);
+    }
     
-    source.onmessage = (e) => {
-      const event = JSON.parse(e.data);
-      if (['RECOVERED', 'BATCH_COMPLETE', 'STOPPED', 'ESCALATED'].includes(event.type)) {
-        fetch('http://localhost:3001/api/metrics/summary')
-          .then(res => res.json())
-          .then(data => setMetrics(data));
-      }
+    return () => {
+      if (source) source.close();
     };
-    
-    return () => source.close();
   }, []);
+
+  // Safe derived values
+  const recoveryRate = metrics?.recoveryRate || 0;
+  const gaugeRate = recoveryRate > 0 ? 88 + (recoveryRate / 10) : 85;
+
+  if (error) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div>
+          <h1>Revenue Recovery Overview</h1>
+          <p className="subtitle">Unable to connect to the backend. Is the server running on port 3001?</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -39,27 +76,26 @@ export default function DashboardPage() {
       <MetricsPanel metrics={metrics} />
       
       <div className="charts-grid">
-        <RevenueChart liveAmount={metrics?.totalAmountRecovered} />
-        <SuccessRateGauge rate={metrics?.recoveryRate > 0 ? 88 + (metrics.recoveryRate/10) : 85} />
+        <RevenueChart liveAmount={metrics?.totalAmountRecovered || 0} />
+        <SuccessRateGauge rate={gaugeRate} />
       </div>
       
       <div className="charts-grid">
         <RecoveryFunnel metrics={metrics} />
-        {/* Placeholder for strategy breakdown */}
         <div className="glass-card chart-card">
           <div className="chart-header">
             <h2>Top Strategies</h2>
             <span className="subtitle">Most effective recovery actions</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-             {Object.entries(metrics?.byStrategy || {}).slice(0, 3).map(([strat, data], i) => (
+             {Object.entries(metrics?.byStrategy || {}).slice(0, 3).map(([strat, data]) => (
                <div key={strat} className="glass-panel" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between' }}>
                  <div>
                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{strat.replace(/_/g, ' ')}</div>
                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{data.count} successful</div>
                  </div>
                  <div style={{ fontWeight: 700, color: 'var(--success)' }}>
-                   ₹{data.amountRecovered.toLocaleString('en-IN')}
+                   ₹{(data.amountRecovered || 0).toLocaleString('en-IN')}
                  </div>
                </div>
              ))}
