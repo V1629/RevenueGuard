@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Activity, FileText, Settings, ShieldAlert } from 'lucide-react';
 import '../../styles/components.css';
+import { ShoppingCart } from 'lucide-react';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -9,6 +10,7 @@ const navItems = [
   { path: '/audit', label: 'Audit Trail', icon: FileText },
   { path: '/simulator', label: 'Batch Simulator', icon: ShieldAlert },
   { path: '/settings', label: 'Governance', icon: Settings },
+  { path: '/store', label: 'Store (Demo)', icon: ShoppingCart },
 ];
 
 export default function Sidebar({ killSwitchActive = false }) {

@@ -47,8 +47,8 @@ def generate_transaction(status):
     
     bank = weighted_choice(BANKS)['name']
     method = weighted_choice(PAYMENT_METHODS)['type']
-    
-    amount = random.randint(1, 750) * 100
+    # Keep amounts small so the ₹5000 Razorpay test causes a huge visible spike
+    amount = random.randint(1, 10) * 100
     
     # Generate timestamp within the last 24 hours
     timestamp = datetime.now() - timedelta(hours=random.uniform(0, 24))
@@ -58,7 +58,7 @@ def generate_transaction(status):
         'amount': amount,
         'currency': 'INR',
         'status': status,
-        'timestamp': timestamp.isoformat() + "Z",
+        'timestamp': str(timestamp.timestamp()),
         'paymentMethod': method,
         'bankName': bank,
         'cardBin': f"{random.randint(400000, 599999)}" if 'Card' in method else None,

@@ -53,7 +53,8 @@ export default function DashboardPage() {
 
   // Safe derived values
   const recoveryRate = metrics?.recoveryRate || 0;
-  const gaugeRate = recoveryRate > 0 ? 88 + (recoveryRate / 10) : 85;
+  // Use the true gateway success rate calculated by the backend
+  const gaugeRate = metrics?.gatewaySuccessRate || 100;
 
   if (error) {
     return (
@@ -76,7 +77,7 @@ export default function DashboardPage() {
       <MetricsPanel metrics={metrics} />
       
       <div className="charts-grid">
-        <RevenueChart liveAmount={metrics?.totalAmountRecovered || 0} />
+        <RevenueChart timeline={metrics?.timeline || []} />
         <SuccessRateGauge rate={gaugeRate} />
       </div>
       

@@ -25,9 +25,8 @@ app.include_router(router)
 
 @app.on_event("startup")
 def startup_event():
-    # Seed database with initial synthetic data
-    seed_database(500)
-    print("Database seeded with 500 transactions")
+    # Database starts empty. User can seed from UI if needed for judges.
+    print("Database is starting fresh.")
     print("==========================================")
     print("   RevenueGuard AI — Agent Engine         ")
     print("   Running on http://localhost:3001       ")

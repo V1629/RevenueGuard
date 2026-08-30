@@ -5,6 +5,10 @@ class TransactionStore:
     def add_transactions(self, txns):
         for txn in txns:
             self.transactions[txn['id']] = txn
+    
+    def add_entry(self, txn):
+        """Add a single transaction (used by Razorpay integration)."""
+        self.transactions[txn['id']] = txn
             
     def get_all_transactions(self):
         return list(self.transactions.values())

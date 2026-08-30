@@ -10,6 +10,7 @@ import AgentPage from './pages/AgentPage';
 import AuditPage from './pages/AuditPage';
 import SimulatorPage from './pages/SimulatorPage';
 import SettingsPage from './pages/SettingsPage';
+import StorePage from './pages/StorePage';
 
 function App() {
   const [killSwitchActive, setKillSwitchActive] = useState(false);
@@ -67,6 +68,7 @@ function App() {
               <Route path="/audit" element={<AuditPage />} />
               <Route path="/simulator" element={<SimulatorPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/store" element={<StorePage />} />
             </Routes>
           </div>
         </main>

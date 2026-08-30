@@ -37,6 +37,15 @@ class Orchestrator:
             
         results['detected'] += 1
         
+        # Inject riskType into transaction so the frontend can read it
+        transaction['riskType'] = detection.get('riskType', 'PAYMENT_FAILURE')
+        
+        sse_manager.broadcast({
+            'type': 'DETECTED',
+            'transactionId': txn_id,
+            'transaction': transaction
+        })
+        
         # 2. Governance Check (Kill Switch & Escalation)
         if not governance.can_proceed():
             results['stopped'] += 1

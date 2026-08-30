@@ -49,7 +49,7 @@ class Diagnoser:
             diagnosis['isAI'] = True
             
             sse_manager.broadcast({
-                'type': 'DIAGNOSIS_COMPLETE',
+                'type': 'DIAGNOSED',
                 'transactionId': transaction['id'],
                 'diagnosis': diagnosis
             })
@@ -79,7 +79,7 @@ class Diagnoser:
         }
         
         sse_manager.broadcast({
-            'type': 'DIAGNOSIS_COMPLETE',
+            'type': 'DIAGNOSED',
             'transactionId': transaction['id'],
             'diagnosis': diagnosis
         })
