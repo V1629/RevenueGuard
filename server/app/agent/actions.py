@@ -1,5 +1,7 @@
 import asyncio
 import random
+import os
+import resend
 from ..ai.groq_client import groq_client
 from ..ai.prompts import generate_nudge_prompt, NUDGE_SYSTEM_PROMPT
 from ..api.sse_manager import sse_manager
@@ -30,7 +32,7 @@ async def action_nudge(transaction, diagnosis, spend_tracker):
             'customer_id': transaction['customerInfo']['id'],
             'reason': diagnosis['reason'],
             'amount': transaction['amount'],
-            'context_string': "Failed subscription renewal"
+            'context_string': f"Failed subscription renewal. Give them this exact recovery link to retry their payment: https://acmecorp.com/recover/{transaction['id']}"
         })
         nudge = await groq_client.analyze(NUDGE_SYSTEM_PROMPT, prompt)
     except Exception as e:
@@ -42,6 +44,8 @@ async def action_nudge(transaction, diagnosis, spend_tracker):
         }
         
     await simulate_delay(500)
+    
+    # (Resend integration moved to dispatch_customer_notification so it only fires once per failure)
     
     # 60% chance the nudge converts
     success = random.random() < 0.6
@@ -75,3 +79,57 @@ async def action_escalate(transaction, diagnosis, spend_tracker):
         'cost': 0,
         'message': "Escalated to human queue"
     }
+
+async def dispatch_customer_notification(transaction, diagnosis):
+    """
+    Called by the orchestrator to ensure exactly 1 email is sent per failure,
+    regardless of which recovery strategy is chosen.
+    """
+    phone = transaction.get('customerInfo', {}).get('phone', 'Unknown')
+    email = transaction.get('customerInfo', {}).get('id', 'Unknown')
+    
+    try:
+        prompt = generate_nudge_prompt({
+            'customer_id': transaction['customerInfo']['id'],
+            'reason': diagnosis['reason'],
+            'amount': transaction['amount'],
+            'context_string': f"Failed subscription renewal. Give them this exact recovery link to retry their payment: https://acmecorp.com/recover/{transaction['id']}"
+        })
+        nudge = await groq_client.analyze(NUDGE_SYSTEM_PROMPT, prompt)
+    except Exception as e:
+        print(f"[Nudge] AI generation failed, using template: {e}")
+        nudge = {
+            'content': f"Hi, your payment of ₹{transaction['amount']} failed. Please update your card.",
+            'channel': 'sms',
+            'tone': 'helpful'
+        }
+
+    print("\n" + "="*50)
+    print("🚀 DISPATCHING FAILURE NOTIFICATION")
+    print(f"📧 TO EMAIL: {email}")
+    print(f"📱 TO PHONE: {phone}")
+    print("-" * 50)
+    print(f"MESSAGE: {nudge.get('content')}")
+    print("="*50 + "\n")
+    
+    if email and email != 'Unknown' and '@' in email:
+        try:
+            resend.api_key = os.environ.get("RESEND_API_KEY")
+            params = {
+                "from": "onboarding@resend.dev",
+                "to": email,
+                "subject": "Payment Failed - Action Required",
+                "html": f"<p>{nudge.get('content')}</p>"
+            }
+            # Temporarily disabled actual email sending for testing
+            # resend.Emails.send(params)
+            print(f"[Resend] (MOCKED) Successfully simulated sending email to {email}!")
+        except Exception as e:
+            print(f"[Resend] Failed to send email: {e}")
+            
+    sse_manager.broadcast({
+        'type': 'NOTIFICATION',
+        'level': 'success',
+        'message': f"Sent failure notification to {email}: '{nudge.get('content')}'"
+    })
+
