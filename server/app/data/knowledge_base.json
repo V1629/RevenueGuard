@@ -1,0 +1,905 @@
+{
+  "patterns": [
+    {
+      "id": "KB-001",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "INSUFFICIENT_FUNDS",
+      "gateway": "all",
+      "description": "The cardholder's bank account does not have enough balance to cover the transaction amount.",
+      "rootCause": "The issuing bank's authorization system returned response code 51 (insufficient funds). Common around month-end or before salary credit dates in India.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait 24 hours for potential salary/credit cycle replenishment",
+        "Send gentle nudge suggesting alternate payment method (UPI, another card)",
+        "If recurring subscription, initiate dunning sequence with 3 retry attempts over 72 hours"
+      ],
+      "retryWindow": "24h",
+      "historicalSuccessRate": 35,
+      "maxRetries": 3,
+      "rbiGuideline": "RBI Circular CO.DPSS.POLC.No.S-516 mandates maximum 3 auto-debit retry attempts within 24 hours",
+      "tags": ["card", "balance", "insufficient", "decline", "funds"]
+    },
+    {
+      "id": "KB-002",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "RISK_REJECT",
+      "gateway": "all",
+      "description": "The issuing bank's fraud detection system flagged and rejected this transaction as potentially risky.",
+      "rootCause": "The card issuer's risk engine detected anomalous patterns such as unusual transaction amount, unfamiliar merchant category, or geographic mismatch. This is an automated bank-side decision.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Do NOT retry immediately — repeated attempts will increase risk score",
+        "Send customer a message asking them to whitelist the merchant with their bank",
+        "Suggest an alternate payment method (UPI or net banking) to bypass card risk engine"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 10,
+      "maxRetries": 1,
+      "rbiGuideline": null,
+      "tags": ["risk", "fraud", "block", "decline", "bank"]
+    },
+    {
+      "id": "KB-003",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "EXPIRED_CARD",
+      "gateway": "all",
+      "description": "The card used for the transaction has passed its expiry date and is no longer valid for transactions.",
+      "rootCause": "The card's expiry date (MM/YY) has passed. The issuing bank rejects all transactions on expired cards with response code 54.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Send customer notification to update their card details",
+        "Provide direct link to payment method update page",
+        "If subscription, pause billing and send renewal reminder"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 5,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["card", "expired", "expiry", "invalid", "renewal"]
+    },
+    {
+      "id": "KB-004",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "STOLEN_CARD",
+      "gateway": "all",
+      "description": "The card has been reported as lost or stolen by the cardholder to the issuing bank.",
+      "rootCause": "The issuing bank has flagged this card in the hot list (response code 43). All transactions will be declined until a replacement card is issued.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Do NOT retry — this card is permanently blocked",
+        "Send customer a notification about the declined payment",
+        "Request customer to update with a new card or use alternate payment method"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 0,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["stolen", "lost", "card", "blocked", "hot"]
+    },
+    {
+      "id": "KB-005",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "CARD_LIMIT_EXCEEDED",
+      "gateway": "all",
+      "description": "The transaction amount exceeds the card's daily, weekly, or monthly spending limit set by the bank or cardholder.",
+      "rootCause": "Most Indian banks impose default transaction limits (e.g., ₹2L/day for debit cards, ₹5L/day for credit cards). The cardholder may also have set custom lower limits via mobile banking.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait 24 hours for daily limit reset",
+        "Send nudge suggesting customer increase their card limit via bank app",
+        "Offer to split the payment into smaller installments or EMI",
+        "Suggest alternate payment method (UPI has separate limits)"
+      ],
+      "retryWindow": "24h",
+      "historicalSuccessRate": 40,
+      "maxRetries": 2,
+      "rbiGuideline": "RBI mandates banks to allow customers to set their own per-transaction and daily limits for debit cards",
+      "tags": ["limit", "exceeded", "daily", "card", "spending"]
+    },
+    {
+      "id": "KB-006",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "INVALID_CARD_NUMBER",
+      "gateway": "all",
+      "description": "The card number entered by the customer is incorrect or does not pass the Luhn checksum validation.",
+      "rootCause": "The customer likely mistyped one or more digits of their card number. The Luhn algorithm check failed at the gateway level before even reaching the bank.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Show clear error message asking customer to re-enter card details",
+        "Implement auto-formatting and Luhn validation on the frontend",
+        "Offer saved card tokenization for repeat customers"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 0,
+      "maxRetries": 0,
+      "rbiGuideline": "RBI Card-on-File Tokenization guidelines (2022) — merchants must tokenize cards via certified token requestors",
+      "tags": ["invalid", "card", "number", "typo", "checksum"]
+    },
+    {
+      "id": "KB-007",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "DO_NOT_HONOR",
+      "gateway": "all",
+      "description": "A generic decline from the issuing bank without a specific reason. The bank chose not to honor this transaction.",
+      "rootCause": "Response code 05 (Do Not Honor) is a catch-all decline used when the bank's internal systems reject the transaction for undisclosed reasons. Could be temporary holds, internal risk flags, or system issues.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait 4 hours and retry once",
+        "If retry fails, send customer a nudge to contact their bank",
+        "Suggest alternate payment method as fallback"
+      ],
+      "retryWindow": "4h",
+      "historicalSuccessRate": 25,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["honor", "generic", "decline", "bank", "refused"]
+    },
+    {
+      "id": "KB-008",
+      "category": "CARD_DECLINED",
+      "errorCode": "card_declined",
+      "reason": "RESTRICTED_CARD",
+      "gateway": "all",
+      "description": "The card has been restricted by the issuing bank for certain types of transactions or merchant categories.",
+      "rootCause": "The bank has restricted this card from e-commerce or international transactions. Common with corporate cards or newly issued cards in India that require activation for online use.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Send customer notification to enable online transactions via bank app",
+        "Suggest alternate payment method (UPI, net banking)",
+        "Do not retry with the same card until customer confirms activation"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 5,
+      "maxRetries": 0,
+      "rbiGuideline": "RBI mandates banks to allow customers to enable/disable domestic and international e-commerce transactions",
+      "tags": ["restricted", "card", "blocked", "disabled", "ecommerce"]
+    },
+    {
+      "id": "KB-009",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "ACQUIRER_TIMEOUT",
+      "gateway": "all",
+      "description": "The acquiring bank did not respond to the payment gateway within the expected time window.",
+      "rootCause": "The payment request timed out between the gateway and the acquiring bank's servers. Often caused by high transaction volume during peak hours (flash sales, festival seasons) or transient network congestion.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Retry immediately through the same gateway",
+        "If immediate retry fails, switch to an alternate payment gateway",
+        "Monitor gateway health dashboard for systemic issues"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 75,
+      "maxRetries": 3,
+      "rbiGuideline": null,
+      "tags": ["timeout", "acquirer", "gateway", "slow", "network"]
+    },
+    {
+      "id": "KB-010",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "PROCESSOR_DOWN",
+      "gateway": "all",
+      "description": "The payment processor is experiencing a full or partial outage and is unable to process transactions.",
+      "rootCause": "The upstream payment processor (e.g., NPCI for UPI, Visa/Mastercard for cards) is experiencing downtime. These outages are typically short (5-30 minutes) but affect all merchants on that processor.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Immediately route transactions through an alternate gateway/processor",
+        "If no alternate gateway, queue the transaction for retry in 5 minutes",
+        "Send proactive status update to the customer about the temporary issue"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 80,
+      "maxRetries": 3,
+      "rbiGuideline": null,
+      "tags": ["processor", "down", "outage", "gateway", "unavailable"]
+    },
+    {
+      "id": "KB-011",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "NETWORK_ERROR",
+      "gateway": "all",
+      "description": "A network connectivity issue occurred between the payment gateway and the banking network.",
+      "rootCause": "TCP/TLS connection failure or DNS resolution error between the payment gateway's servers and the bank's API endpoints. Can be caused by ISP issues, CDN failures, or firewall rule changes.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Retry immediately — network errors are usually transient",
+        "If second attempt fails, switch to a different gateway with a separate network path",
+        "Log the error for infrastructure team review"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 70,
+      "maxRetries": 3,
+      "rbiGuideline": null,
+      "tags": ["network", "connection", "error", "dns", "timeout"]
+    },
+    {
+      "id": "KB-012",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "GATEWAY_RATE_LIMITED",
+      "gateway": "all",
+      "description": "The payment gateway has rate-limited the merchant due to exceeding API request limits.",
+      "rootCause": "The merchant exceeded the gateway's API rate limit (e.g., Razorpay allows 25 requests/second per API key). Commonly triggered during flash sales or batch processing.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Implement exponential backoff — wait 1 minute before retrying",
+        "Contact gateway provider to increase rate limits",
+        "Distribute traffic across multiple API keys or gateway accounts"
+      ],
+      "retryWindow": "1h",
+      "historicalSuccessRate": 90,
+      "maxRetries": 3,
+      "rbiGuideline": null,
+      "tags": ["rate", "limit", "throttle", "api", "gateway"]
+    },
+    {
+      "id": "KB-013",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "SETTLEMENT_FAILED",
+      "gateway": "all",
+      "description": "The payment was authorized but the settlement process between banks failed to complete.",
+      "rootCause": "The settlement batch between the acquiring and issuing banks failed during the daily settlement cycle. The funds are held in an intermediate state.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Wait for the next settlement window (usually 4-6 hours)",
+        "Contact the acquiring bank to manually initiate settlement",
+        "Verify the payment status via gateway dashboard before retrying"
+      ],
+      "retryWindow": "4h",
+      "historicalSuccessRate": 60,
+      "maxRetries": 2,
+      "rbiGuideline": "RBI mandates T+1 settlement for UPI and card transactions",
+      "tags": ["settlement", "failed", "batch", "bank", "clearing"]
+    },
+    {
+      "id": "KB-014",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "BANK_SERVER_DOWN",
+      "gateway": "all",
+      "description": "The issuing bank's server is temporarily unreachable or experiencing an outage.",
+      "rootCause": "The bank's core banking system (CBS) is down for maintenance or experiencing technical issues. Indian banks commonly have scheduled maintenance windows between 11:30 PM - 2:00 AM IST.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Route the transaction through an alternate gateway that uses a different acquiring bank",
+        "If the customer's bank is known to be down, suggest using a different payment method",
+        "Retry after 15 minutes if the issue appears transient"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 85,
+      "maxRetries": 3,
+      "rbiGuideline": null,
+      "tags": ["bank", "server", "down", "maintenance", "outage"]
+    },
+    {
+      "id": "KB-015",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "ROUTING_ERROR",
+      "gateway": "all",
+      "description": "The payment gateway failed to route the transaction to the correct acquiring bank or processor.",
+      "rootCause": "Internal routing logic within the gateway failed due to misconfigured merchant settings, unsupported BIN range, or missing routing rules for the payment method.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Switch to an alternate gateway immediately",
+        "If using smart routing, fallback to direct integration",
+        "Escalate to gateway technical support if the error persists"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 80,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["routing", "error", "gateway", "path", "misconfigured"]
+    },
+    {
+      "id": "KB-016",
+      "category": "GATEWAY_ERROR",
+      "errorCode": "gateway_timeout",
+      "reason": "TIMEOUT_BETWEEN_SYSTEMS",
+      "gateway": "all",
+      "description": "A timeout occurred in the communication chain between payment systems (gateway → acquirer → issuer).",
+      "rootCause": "The multi-hop communication between systems exceeded the timeout threshold. Each hop (merchant → gateway → processor → acquirer → issuer) adds latency, and any single slow link can cause the entire chain to timeout.",
+      "bestStrategy": "PAYMENT_DEGRADATION",
+      "recommendedActions": [
+        "Retry immediately — the timeout is often transient",
+        "If retry fails, try a gateway with fewer hops in the processing chain",
+        "Check status of intermediate systems before further retries"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 70,
+      "maxRetries": 3,
+      "rbiGuideline": null,
+      "tags": ["timeout", "systems", "latency", "hop", "delay"]
+    },
+    {
+      "id": "KB-017",
+      "category": "AUTHENTICATION",
+      "errorCode": "authentication_failed",
+      "reason": "3DS_FAILED",
+      "gateway": "all",
+      "description": "The customer failed 3D Secure (Visa Secure / Mastercard SecureCode) authentication during the checkout process.",
+      "rootCause": "The customer could not complete the 3DS challenge — either they entered the wrong OTP, closed the authentication popup, or the bank's 3DS server was unresponsive. 3DS is mandatory for Indian card transactions per RBI mandate.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Retry immediately — redirect customer to payment page again",
+        "Send helpful nudge explaining the OTP/authentication step",
+        "Offer UPI as an alternate (simpler authentication flow)"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 45,
+      "maxRetries": 3,
+      "rbiGuideline": "RBI mandates Additional Factor of Authentication (AFA) for all domestic card-not-present transactions",
+      "tags": ["3ds", "authentication", "otp", "secure", "verification"]
+    },
+    {
+      "id": "KB-018",
+      "category": "AUTHENTICATION",
+      "errorCode": "authentication_failed",
+      "reason": "OTP_TIMEOUT",
+      "gateway": "all",
+      "description": "The customer did not enter the OTP within the allowed time window, causing the authentication to expire.",
+      "rootCause": "Indian banks typically allow 3-5 minutes for OTP entry. The customer may have experienced delayed OTP delivery (common with certain carriers like BSNL/MTNL) or simply got distracted.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Retry immediately — present the checkout page again for fresh OTP",
+        "Send nudge: 'Your OTP may have been delayed. Please try again.'",
+        "Suggest UPI or net banking as alternatives with different auth flows"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 55,
+      "maxRetries": 3,
+      "rbiGuideline": "RBI mandates AFA (OTP/biometric) for all online card transactions in India",
+      "tags": ["otp", "timeout", "expired", "sms", "authentication"]
+    },
+    {
+      "id": "KB-019",
+      "category": "AUTHENTICATION",
+      "errorCode": "authentication_failed",
+      "reason": "INVALID_PIN",
+      "gateway": "all",
+      "description": "The customer entered an incorrect PIN during the debit card transaction authentication.",
+      "rootCause": "The PIN entered by the customer does not match the one registered with the issuing bank. After 3 incorrect attempts, most banks will block the card temporarily.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Do NOT retry with PIN — suggest customer verify their PIN first",
+        "Offer credit card or UPI as alternate methods (no PIN required for online)",
+        "Send helpful nudge about PIN reset options via bank app"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 20,
+      "maxRetries": 1,
+      "rbiGuideline": null,
+      "tags": ["pin", "invalid", "wrong", "debit", "authentication"]
+    },
+    {
+      "id": "KB-020",
+      "category": "AUTHENTICATION",
+      "errorCode": "authentication_failed",
+      "reason": "3DS_NOT_ENROLLED",
+      "gateway": "all",
+      "description": "The customer's card is not enrolled in the 3D Secure program, preventing the transaction from completing.",
+      "rootCause": "The card has not been registered for 3D Secure / VBV / MSC by the issuing bank. Some older cards or cards issued in certain regions may not have 3DS enabled by default.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Redirect customer to retry immediately with the same card (some banks auto-enroll)",
+        "Suggest the customer contact their bank to enroll in 3D Secure",
+        "Offer UPI or net banking as immediate alternatives"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 60,
+      "maxRetries": 2,
+      "rbiGuideline": "RBI mandates AFA for all CNP transactions — 3DS enrollment is required",
+      "tags": ["3ds", "enrollment", "not enrolled", "card", "registration"]
+    },
+    {
+      "id": "KB-021",
+      "category": "AUTHENTICATION",
+      "errorCode": "authentication_failed",
+      "reason": "BIOMETRIC_FAILED",
+      "gateway": "all",
+      "description": "The biometric authentication (fingerprint or face recognition) for the transaction failed on the customer's device.",
+      "rootCause": "The customer's device-level biometric check (used by some UPI apps and digital wallets) did not validate successfully. Could be due to wet fingers, poor lighting for face ID, or sensor malfunction.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Retry immediately — biometric failures are usually one-off",
+        "Suggest customer use PIN/pattern as a fallback authentication method",
+        "Offer alternate payment method that doesn't require biometrics"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 50,
+      "maxRetries": 3,
+      "rbiGuideline": null,
+      "tags": ["biometric", "fingerprint", "face", "authentication", "device"]
+    },
+    {
+      "id": "KB-022",
+      "category": "AUTHENTICATION",
+      "errorCode": "authentication_failed",
+      "reason": "OTP_MISMATCH",
+      "gateway": "all",
+      "description": "The OTP entered by the customer does not match the one sent by the issuing bank.",
+      "rootCause": "The customer may have entered an old OTP (from a previous attempt), misread the SMS, or a different OTP was received for a parallel transaction. Banks typically allow 3 attempts before blocking.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Do NOT retry immediately — wait for old OTP to expire",
+        "Send nudge asking customer to check for the latest SMS and try again",
+        "Suggest UPI or net banking as alternatives with simpler auth"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 30,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["otp", "mismatch", "wrong", "sms", "code"]
+    },
+    {
+      "id": "KB-023",
+      "category": "AUTHENTICATION",
+      "errorCode": "authentication_failed",
+      "reason": "CHALLENGE_TIMEOUT",
+      "gateway": "all",
+      "description": "The bank's authentication challenge window expired before the customer could complete the verification step.",
+      "rootCause": "The bank's challenge flow (3DS 2.0 step-up authentication) has a configurable timeout (usually 5-10 minutes). The customer did not complete the challenge within this window, possibly due to page navigation or distraction.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Wait 1 hour for the customer's session to fully clear",
+        "Send a cart recovery nudge with a direct checkout link",
+        "Simplify the checkout flow to reduce authentication friction"
+      ],
+      "retryWindow": "1h",
+      "historicalSuccessRate": 50,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["challenge", "timeout", "3ds", "verification", "expired"]
+    },
+    {
+      "id": "KB-024",
+      "category": "CHECKOUT_FRICTION",
+      "errorCode": "checkout_friction",
+      "reason": "USER_ABANDONED",
+      "gateway": "all",
+      "description": "The customer navigated away from the checkout page without completing the payment.",
+      "rootCause": "The customer dropped off during the payment flow. Common causes include: comparison shopping, unexpected total amount (shipping/taxes), too many form fields, or lack of preferred payment method.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Send cart abandonment nudge within 1 hour while intent is still warm",
+        "Offer a small incentive (5-10% discount or free shipping) in the recovery message",
+        "Implement one-click checkout and saved payment methods to reduce friction"
+      ],
+      "retryWindow": "1h",
+      "historicalSuccessRate": 40,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["abandoned", "checkout", "cart", "dropout", "navigation"]
+    },
+    {
+      "id": "KB-025",
+      "category": "CHECKOUT_FRICTION",
+      "errorCode": "checkout_friction",
+      "reason": "PAGE_CRASH",
+      "gateway": "all",
+      "description": "The payment page crashed or became unresponsive during the checkout process.",
+      "rootCause": "Client-side JavaScript error, gateway SDK loading failure, or browser compatibility issue caused the checkout page to crash. More common on older Android devices with limited RAM.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Retry immediately — redirect customer to a fresh checkout page",
+        "Fall back to server-side payment link if client-side SDK keeps failing",
+        "Log the crash details for frontend debugging"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 65,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["crash", "page", "error", "javascript", "browser"]
+    },
+    {
+      "id": "KB-026",
+      "category": "CHECKOUT_FRICTION",
+      "errorCode": "checkout_friction",
+      "reason": "PAYMENT_METHOD_UNAVAILABLE",
+      "gateway": "all",
+      "description": "The customer's preferred payment method is temporarily unavailable on the payment gateway.",
+      "rootCause": "The specific payment method (e.g., HDFC net banking, or a particular UPI app) is experiencing downtime or has been disabled by the gateway for maintenance.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Retry immediately with an alternate payment method displayed prominently",
+        "Switch to a backup gateway that supports the preferred method",
+        "Show real-time payment method availability status on the checkout page"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 50,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["payment", "method", "unavailable", "unsupported", "option"]
+    },
+    {
+      "id": "KB-027",
+      "category": "CHECKOUT_FRICTION",
+      "errorCode": "checkout_friction",
+      "reason": "SESSION_EXPIRED",
+      "gateway": "all",
+      "description": "The customer's payment session expired before they could complete the transaction.",
+      "rootCause": "Payment sessions typically have a 15-30 minute timeout. If the customer takes too long to enter details or gets distracted, the session token becomes invalid and the gateway rejects the request.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Redirect customer to a fresh checkout page immediately",
+        "Implement session extension with a 'Still there?' prompt",
+        "Send recovery nudge with a direct, pre-filled checkout link"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 55,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["session", "expired", "timeout", "token", "checkout"]
+    },
+    {
+      "id": "KB-028",
+      "category": "CHECKOUT_FRICTION",
+      "errorCode": "checkout_friction",
+      "reason": "BROWSER_BACK_BUTTON",
+      "gateway": "all",
+      "description": "The customer pressed the browser's back button during the payment flow, interrupting the transaction.",
+      "rootCause": "Navigating backward during payment processing can break the transaction flow, especially during 3DS authentication or UPI intent redirects. The payment state becomes inconsistent.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Wait 1 hour and send a cart recovery nudge",
+        "Implement browser back-button interception with a confirmation dialog",
+        "Use a modal-based checkout flow instead of page redirects"
+      ],
+      "retryWindow": "1h",
+      "historicalSuccessRate": 35,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["back", "button", "browser", "navigation", "interrupted"]
+    },
+    {
+      "id": "KB-029",
+      "category": "CHECKOUT_FRICTION",
+      "errorCode": "checkout_friction",
+      "reason": "SLOW_LOADING_CHECKOUT",
+      "gateway": "all",
+      "description": "The checkout page took too long to load, causing the customer to abandon the payment.",
+      "rootCause": "Slow network connection (2G/3G in rural India), heavy page assets, or unoptimized gateway SDK caused the checkout to take more than 5 seconds to render. Studies show 53% of mobile users abandon after 3 seconds.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Retry immediately with a lighter checkout page",
+        "Implement lazy loading and CDN delivery for checkout assets",
+        "Offer a payment link via SMS as a lightweight alternative"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 60,
+      "maxRetries": 2,
+      "rbiGuideline": null,
+      "tags": ["slow", "loading", "performance", "checkout", "speed"]
+    },
+    {
+      "id": "KB-030",
+      "category": "CHECKOUT_FRICTION",
+      "errorCode": "checkout_friction",
+      "reason": "COUPON_CODE_FAILED",
+      "gateway": "all",
+      "description": "The customer's coupon or promo code was invalid or expired, causing them to abandon the purchase.",
+      "rootCause": "The customer attempted to apply a promotional code that was either expired, already used, or not applicable to their cart. The price increase from losing the discount caused checkout abandonment.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Retry immediately — offer an alternative valid coupon code",
+        "Send a personalized recovery nudge with a fresh discount code",
+        "Show clear error messages about coupon validity before the payment step"
+      ],
+      "retryWindow": "immediate",
+      "historicalSuccessRate": 70,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["coupon", "promo", "discount", "code", "invalid"]
+    },
+    {
+      "id": "KB-031",
+      "category": "FRAUD_RISK",
+      "errorCode": "card_declined",
+      "reason": "VELOCITY_CHECK_FAILED",
+      "gateway": "all",
+      "description": "Multiple rapid transactions from the same card or customer triggered the velocity fraud check.",
+      "rootCause": "The gateway or bank detected too many transaction attempts in a short period (e.g., 5+ attempts within 10 minutes). This is a common fraud detection mechanism to prevent card testing attacks.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait at least 4 hours before the next retry attempt",
+        "Do NOT attempt rapid retries — it will further increase the risk score",
+        "Send customer a message explaining the temporary hold and ask them to retry later"
+      ],
+      "retryWindow": "4h",
+      "historicalSuccessRate": 15,
+      "maxRetries": 1,
+      "rbiGuideline": null,
+      "tags": ["velocity", "rapid", "fraud", "multiple", "attempts"]
+    },
+    {
+      "id": "KB-032",
+      "category": "FRAUD_RISK",
+      "errorCode": "card_declined",
+      "reason": "ADDRESS_MISMATCH",
+      "gateway": "all",
+      "description": "The billing address provided does not match the address on file with the card issuing bank.",
+      "rootCause": "AVS (Address Verification System) check failed. The street address or postal code provided during checkout doesn't match the cardholder's registered address. Less common in India where AVS adoption is lower.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Do NOT retry with the same address",
+        "Send customer a nudge to verify and update their billing address",
+        "Suggest UPI payment which doesn't require address verification"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 10,
+      "maxRetries": 1,
+      "rbiGuideline": null,
+      "tags": ["address", "mismatch", "avs", "billing", "verification"]
+    },
+    {
+      "id": "KB-033",
+      "category": "FRAUD_RISK",
+      "errorCode": "card_declined",
+      "reason": "CVV_MISMATCH",
+      "gateway": "all",
+      "description": "The CVV/CVC security code entered does not match the one printed on the card.",
+      "rootCause": "The 3-digit (or 4-digit for Amex) security code entered by the customer is incorrect. This is a strong fraud indicator as the CVV should only be known to the physical cardholder.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Do NOT retry automatically — potential fraud indicator",
+        "Show clear error asking customer to verify the CVV on their physical card",
+        "Suggest alternate payment method if customer cannot locate CVV"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 5,
+      "maxRetries": 1,
+      "rbiGuideline": null,
+      "tags": ["cvv", "cvc", "security", "code", "mismatch"]
+    },
+    {
+      "id": "KB-034",
+      "category": "FRAUD_RISK",
+      "errorCode": "card_declined",
+      "reason": "IP_GEOLOCATION_MISMATCH",
+      "gateway": "all",
+      "description": "The customer's IP address location doesn't match the card's issuing country or expected region.",
+      "rootCause": "The payment gateway's fraud engine detected that the customer is browsing from a different country/region than where the card was issued. Could be a legitimate traveler or VPN user, but also a common fraud pattern.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Do NOT retry automatically",
+        "If customer is a known repeat buyer, whitelist them",
+        "Send verification email/SMS before allowing retry"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 10,
+      "maxRetries": 1,
+      "rbiGuideline": null,
+      "tags": ["ip", "geolocation", "country", "mismatch", "vpn"]
+    },
+    {
+      "id": "KB-035",
+      "category": "FRAUD_RISK",
+      "errorCode": "card_declined",
+      "reason": "DEVICE_FINGERPRINT_SUSPICIOUS",
+      "gateway": "all",
+      "description": "The customer's device fingerprint matches known patterns associated with fraudulent activity.",
+      "rootCause": "Device fingerprinting detected suspicious characteristics: emulated browser, privacy-mode user agent, known bot signatures, or a device linked to previous fraud attempts in the gateway's database.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Do NOT retry — high fraud probability",
+        "Escalate to manual review if high-value transaction",
+        "Block the device fingerprint if pattern repeats"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 5,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["device", "fingerprint", "suspicious", "bot", "fraud"]
+    },
+    {
+      "id": "KB-036",
+      "category": "FRAUD_RISK",
+      "errorCode": "card_declined",
+      "reason": "DUPLICATE_TRANSACTION",
+      "gateway": "all",
+      "description": "An identical transaction (same amount, card, merchant) was detected within a very short time window.",
+      "rootCause": "The gateway's deduplication engine flagged this as a potential duplicate charge. Could be caused by the customer double-clicking the pay button, browser refresh during processing, or a genuine duplicate submission.",
+      "bestStrategy": "CHECKOUT_DROPOFF",
+      "recommendedActions": [
+        "Do NOT retry — verify if the first transaction actually succeeded",
+        "Check the original transaction status via gateway API",
+        "If first transaction succeeded, show success page; if not, allow a fresh attempt"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 0,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["duplicate", "double", "charge", "repeated", "same"]
+    },
+    {
+      "id": "KB-037",
+      "category": "FRAUD_RISK",
+      "errorCode": "card_declined",
+      "reason": "HIGH_RISK_MERCHANT_CATEGORY",
+      "gateway": "all",
+      "description": "The transaction was declined because the merchant's business category (MCC) is flagged as high-risk by the issuing bank.",
+      "rootCause": "Certain Merchant Category Codes (MCCs) like gaming, crypto, or adult content are blocked by some Indian banks. The issuing bank refuses transactions to these merchant categories regardless of card validity.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait 4 hours and retry — some banks have time-based restrictions",
+        "Suggest alternate payment methods that bypass MCC checks (UPI, wallets)",
+        "Contact the acquiring bank about MCC reclassification if applicable"
+      ],
+      "retryWindow": "4h",
+      "historicalSuccessRate": 20,
+      "maxRetries": 1,
+      "rbiGuideline": null,
+      "tags": ["mcc", "merchant", "category", "high", "risk"]
+    },
+    {
+      "id": "KB-038",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "MANDATE_REVOKED",
+      "gateway": "all",
+      "description": "The customer has revoked the recurring payment mandate/authorization with their bank.",
+      "rootCause": "The customer actively canceled the e-mandate through their banking app or by contacting their bank. The bank will reject all future auto-debit attempts on this mandate.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Do NOT retry auto-debit — the mandate is permanently cancelled",
+        "Send customer a subscription renewal link for manual payment",
+        "Offer to set up a new mandate if the customer wishes to continue"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 5,
+      "maxRetries": 0,
+      "rbiGuideline": "RBI e-mandate framework requires explicit customer consent for each mandate registration",
+      "tags": ["mandate", "revoked", "cancelled", "recurring", "subscription"]
+    },
+    {
+      "id": "KB-039",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "MANDATE_EXPIRED",
+      "gateway": "all",
+      "description": "The recurring payment mandate has reached its expiry date and is no longer valid.",
+      "rootCause": "E-mandates in India have a defined validity period (set during registration). Once expired, the bank will reject all auto-debit requests until a new mandate is registered.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Send customer a mandate renewal request via email/SMS",
+        "Provide a seamless in-app flow for new mandate registration",
+        "Process the current payment manually via a payment link"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 10,
+      "maxRetries": 0,
+      "rbiGuideline": "RBI mandates pre-debit notification 24 hours before each auto-debit",
+      "tags": ["mandate", "expired", "validity", "recurring", "renewal"]
+    },
+    {
+      "id": "KB-040",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "SUBSCRIPTION_PAUSED_BY_CUSTOMER",
+      "gateway": "all",
+      "description": "The customer has temporarily paused their subscription, blocking auto-debit charges.",
+      "rootCause": "The customer used the merchant's app or the bank's interface to pause recurring charges. The mandate is still active but in a suspended state.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Do NOT auto-retry — respect the customer's pause request",
+        "Send a re-engagement email after the pause period ends",
+        "Offer incentive to resume subscription (discount, free trial extension)"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 15,
+      "maxRetries": 0,
+      "rbiGuideline": null,
+      "tags": ["subscription", "paused", "suspended", "recurring", "hold"]
+    },
+    {
+      "id": "KB-041",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "RECURRING_PAYMENT_LIMIT_EXCEEDED",
+      "gateway": "all",
+      "description": "The recurring payment amount exceeds the maximum auto-debit limit set by the customer or mandated by RBI.",
+      "rootCause": "RBI caps auto-debit without additional authentication at ₹15,000 per transaction. If the subscription amount exceeds this limit, the bank requires re-authentication for each charge.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait 24 hours for limit reset, then retry with additional authentication",
+        "Send payment link for manual one-time payment above the limit",
+        "Consider splitting the charge into smaller amounts below ₹15,000"
+      ],
+      "retryWindow": "24h",
+      "historicalSuccessRate": 30,
+      "maxRetries": 2,
+      "rbiGuideline": "RBI mandates AFA for auto-debit transactions exceeding ₹15,000",
+      "tags": ["recurring", "limit", "exceeded", "auto", "debit"]
+    },
+    {
+      "id": "KB-042",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "AUTO_DEBIT_NOT_REGISTERED",
+      "gateway": "all",
+      "description": "No valid e-mandate or auto-debit registration exists for this customer-merchant combination.",
+      "rootCause": "The merchant attempted to charge the customer via auto-debit, but no mandate was registered (or the original mandate was not properly activated via the bank's validation flow).",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Send customer a mandate registration link",
+        "Process the current payment manually via a payment link",
+        "Verify mandate status with the payment gateway before future attempts"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 20,
+      "maxRetries": 0,
+      "rbiGuideline": "RBI e-mandate framework requires OTP-based validation for mandate registration",
+      "tags": ["auto", "debit", "mandate", "registration", "missing"]
+    },
+    {
+      "id": "KB-043",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "E_NACH_DEBIT_FAILED",
+      "gateway": "all",
+      "description": "The electronic NACH (National Automated Clearing House) debit request was rejected by the customer's bank.",
+      "rootCause": "The e-NACH debit failed at the NPCI clearing level. Could be due to insufficient funds, account closure, or the bank's internal processing window mismatch. e-NACH typically processes in T+1 batches.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait 24 hours and retry via the next NACH batch cycle",
+        "Send customer a payment link as immediate fallback",
+        "Verify the customer's bank account status before retrying"
+      ],
+      "retryWindow": "24h",
+      "historicalSuccessRate": 45,
+      "maxRetries": 3,
+      "rbiGuideline": "RBI Circular CO.DPSS.POLC.No.S-516 — maximum 3 auto-debit retry attempts within 24 hours",
+      "tags": ["nach", "clearing", "debit", "bank", "recurring"]
+    },
+    {
+      "id": "KB-044",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "UPI_AUTOPAY_DECLINED",
+      "gateway": "all",
+      "description": "The customer's UPI autopay mandate was declined by their UPI app or linked bank.",
+      "rootCause": "UPI autopay (UPI 2.0 mandate) was declined — either the customer revoked it via their UPI app, the linked bank account has insufficient funds, or the UPI app itself is experiencing issues.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Wait 24 hours for the next UPI autopay cycle",
+        "Send payment link via SMS for manual UPI payment",
+        "If funds are the issue, suggest the customer add money and retry"
+      ],
+      "retryWindow": "24h",
+      "historicalSuccessRate": 40,
+      "maxRetries": 3,
+      "rbiGuideline": "NPCI UPI 2.0 recurring mandate guidelines — pre-debit notification required 24h before",
+      "tags": ["upi", "autopay", "mandate", "declined", "recurring"]
+    },
+    {
+      "id": "KB-045",
+      "category": "RECURRING_PAYMENT",
+      "errorCode": "card_declined",
+      "reason": "TOKEN_EXPIRED",
+      "gateway": "razorpay",
+      "description": "The tokenized card stored for recurring payments has expired and can no longer be used for charges.",
+      "rootCause": "Per RBI's Card-on-File (CoF) tokenization mandate, card tokens have a validity period tied to the underlying card's expiry. When the physical card expires, the token also becomes invalid.",
+      "bestStrategy": "SUBSCRIPTION_RECOVERY",
+      "recommendedActions": [
+        "Send customer a notification to update their saved card details",
+        "Provide a direct link to the payment method management page",
+        "Offer UPI autopay as a token-free recurring alternative"
+      ],
+      "retryWindow": "none",
+      "historicalSuccessRate": 25,
+      "maxRetries": 0,
+      "rbiGuideline": "RBI Card-on-File Tokenization guidelines (2022) — tokens are linked to card validity period",
+      "tags": ["token", "expired", "card", "file", "tokenization"]
+    }
+  ]
+}
