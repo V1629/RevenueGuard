@@ -6,6 +6,7 @@ from ..governance.rules import governance
 from .detector import detector
 from .diagnoser import diagnoser
 from .strategies import strategies
+from .actions import dispatch_customer_notification
 
 class Orchestrator:
     async def process_batch(self, transactions):
@@ -70,7 +71,10 @@ class Orchestrator:
         # 3. Diagnosis Phase
         diagnosis = await diagnoser.diagnose(transaction)
         
-        # 4. Strategy Execution Phase
+        # 4. Dispatch Email Notification (Guarantees exactly 1 email per failure)
+        await dispatch_customer_notification(transaction, diagnosis)
+        
+        # 5. Strategy Execution Phase
         strategy_name = diagnosis.get('strategy', 'CHECKOUT_DROPOFF')
         strategy_method = None
         
