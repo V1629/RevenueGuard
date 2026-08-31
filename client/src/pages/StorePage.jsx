@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShoppingCart, CheckCircle, ShieldAlert, CreditCard } from 'lucide-react';
 import { toast } from '../components/Layout/NotificationToast';
 
 export default function StorePage() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  
+  // New state for customer contact info
+  const [customerEmail, setCustomerEmail] = useState('gaurav.kumar@example.com');
+  const [customerPhone, setCustomerPhone] = useState('9000090000');
 
   useEffect(() => {
     // Load Razorpay Checkout Script
@@ -52,8 +58,8 @@ export default function StorePage() {
         },
         prefill: {
           name: "Gaurav Kumar",
-          email: "gaurav.kumar@example.com",
-          contact: "9000090000"
+          email: customerEmail,
+          contact: customerPhone
         },
         notes: {
           address: "Razorpay Corporate Office"
@@ -83,10 +89,15 @@ export default function StorePage() {
               amount: data.amount, // amount in paise from the order
               method: response.error.metadata?.method || 'card',
               bank: response.error.metadata?.bank || 'Unknown',
-              email: 'gaurav.kumar@example.com'
+              email: customerEmail,
+              phone: customerPhone
             })
           });
           console.log("Failure reported to backend — agent triggered!");
+          
+          // Instantly redirect to the Agent Console so they can watch it happen live!
+          navigate('/agent');
+          
         } catch (err) {
           console.error("Failed to report to backend:", err);
         }
@@ -127,6 +138,27 @@ export default function StorePage() {
             <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} color="var(--success)" /> Priority 24/7 support</li>
             <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><CheckCircle size={16} color="var(--success)" /> Advanced analytics</li>
           </ul>
+
+          <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Email Address</label>
+              <input 
+                type="email" 
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-glass)', borderRadius: '4px', color: '#fff' }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Phone Number</label>
+              <input 
+                type="tel" 
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-glass)', borderRadius: '4px', color: '#fff' }}
+              />
+            </div>
+          </div>
 
           <button 
             className="button-primary" 
