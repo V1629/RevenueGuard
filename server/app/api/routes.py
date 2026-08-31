@@ -239,42 +239,9 @@ async def razorpay_webhook(request: Request, background_tasks: BackgroundTasks):
         
         amount_inr = payment_entity.get("amount", 0) / 100
         
-        # Transform into our RevenueGuard transaction format
-        txn = {
-            'id': f"txn_{uuid.uuid4().hex[:14]}", # Use internal ID system
-            'razorpayPaymentId': payment_entity.get('id'),
-            'amount': amount_inr,
-            'currency': payment_entity.get('currency', 'INR'),
-            'status': 'failed',
-            'timestamp': str(time.time()),
-            'paymentMethod': payment_entity.get('method', 'card'),
-            'bankName': payment_entity.get('bank', 'Unknown'),
-            'gateway': 'Razorpay',
-            'customerInfo': {
-                'id': payment_entity.get('email', 'guest@example.com'),
-                'isRepeat': False,
-                'previousAttempts': 1
-            },
-            'errorDetails': {
-                'code': error_code,
-                'reason': error_reason,
-                'message': error_description
-            }
-        }
-        
-        # 1. Store the transaction in our database
-        transaction_store.add_entry(txn)
-        
-        # 2. Trigger the AI Agent Orchestrator in the background!
-        async def process():
-            await orchestrator.process_batch([txn])
-            # Broadcast the updated metrics
-            sse_manager.broadcast({
-                'type': 'BATCH_COMPLETE',
-                'results': {'detected': 1}
-            })
-            
-        background_tasks.add_task(process)
+        # We now handle failure reporting directly from the frontend (StorePage.jsx -> /payment/report-failure)
+        # This provides richer customer data (phone/email typed in the form) and avoids double-processing.
+        print(f"[Webhook] Payment failed ({error_reason}), but ignoring here to prevent duplicate processing. Frontend will handle it.")
         
     return {"status": "ok"}
 
@@ -287,6 +254,7 @@ class ReportFailureRequest(BaseModel):
     method: str = "card"
     bank: str = "Unknown"
     email: str = "guest@example.com"
+    phone: str = "9000090000"
 
 @router.post("/payment/report-failure")
 async def report_payment_failure(req: ReportFailureRequest, background_tasks: BackgroundTasks):
@@ -311,6 +279,7 @@ async def report_payment_failure(req: ReportFailureRequest, background_tasks: Ba
         'gateway': 'Razorpay',
         'customerInfo': {
             'id': req.email,
+            'phone': req.phone,
             'isRepeat': False,
             'previousAttempts': 1
         },
