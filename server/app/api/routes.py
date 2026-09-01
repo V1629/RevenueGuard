@@ -2,6 +2,7 @@ import os
 import time
 import uuid
 import razorpay
+import stripe
 from fastapi import APIRouter, Request, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -18,8 +19,11 @@ router = APIRouter(prefix="/api")
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_placeholder")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "secret_placeholder")
 RAZORPAY_WEBHOOK_SECRET = os.getenv("RAZORPAY_WEBHOOK_SECRET", "webhook_secret")
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 
 rzp_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+if STRIPE_SECRET_KEY:
+    stripe.api_key = STRIPE_SECRET_KEY
 
 class CreateOrderRequest(BaseModel):
     amount: int
@@ -202,6 +206,38 @@ def create_razorpay_order(req: CreateOrderRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class CreateStripeSessionRequest(BaseModel):
+    amount: int
+    currency: str = "inr"
+    transaction_id: str
+
+@router.post("/payment/create-stripe-session")
+def create_stripe_session(req: CreateStripeSessionRequest):
+    """Creates a Stripe Checkout Session for dynamic fallback routing."""
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': req.currency,
+                    'unit_amount': req.amount * 100, # Stripe expects paise/cents
+                    'product_data': {
+                        'name': 'Premium Subscription (Fallback)',
+                        'description': f'Retry for failed transaction {req.transaction_id}',
+                    },
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url="http://localhost:5173/?success=true",
+            cancel_url="http://localhost:5173/agent",
+            metadata={'original_transaction_id': req.transaction_id}
+        )
+        return {"success": True, "sessionId": session.id, "url": session.url}
+    except Exception as e:
+        print(f"[Stripe] Error creating session: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/webhooks/razorpay")
 async def razorpay_webhook(request: Request, background_tasks: BackgroundTasks):
     """Listens for Razorpay webhooks (specifically payment.failed)."""
@@ -257,7 +293,7 @@ class ReportFailureRequest(BaseModel):
     phone: str = "9000090000"
 
 @router.post("/payment/report-failure")
-async def report_payment_failure(req: ReportFailureRequest, background_tasks: BackgroundTasks):
+async def report_payment_failure(req: ReportFailureRequest):
     """
     Called directly by the frontend when Razorpay JS SDK fires payment.failed callback.
     This bypasses the webhook entirely — no tunnel needed.
@@ -293,14 +329,24 @@ async def report_payment_failure(req: ReportFailureRequest, background_tasks: Ba
     # 1. Store the transaction
     transaction_store.add_entry(txn)
     
-    # 2. Trigger the AI Agent Orchestrator
-    async def process():
+    # 2. Trigger the AI Agent Orchestrator (run inline so we can return the URL immediately)
+    try:
+        print(f"[ReportFailure] Starting orchestrator for {txn['id']}...", flush=True)
         results = await orchestrator.process_batch([txn])
+        print(f"[ReportFailure] Orchestrator completed! Results: {results}", flush=True)
         sse_manager.broadcast({
             'type': 'BATCH_COMPLETE',
             'results': results
         })
-        
-    background_tasks.add_task(process)
+    except Exception as e:
+        print(f"[ReportFailure] ❌ Orchestrator error: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
     
-    return {"success": True, "message": "Failure reported — agent triggered!", "transactionId": txn['id']}
+    return {
+        "success": True, 
+        "message": "Failure reported — agent triggered!", 
+        "transactionId": txn['id'],
+        "fallbackUrl": txn.get('fallbackUrl')
+    }
+

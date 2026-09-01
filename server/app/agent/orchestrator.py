@@ -99,6 +99,9 @@ class Orchestrator:
         
         # 5. Outcome Phase
         if outcome['success']:
+            if 'url' in outcome:
+                transaction['fallbackUrl'] = outcome['url']
+                
             results['recovered'] += 1
             results['amountRecovered'] += transaction['amount']
             transaction_store.update_transaction(txn_id, {

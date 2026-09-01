@@ -2,6 +2,7 @@ import asyncio
 import random
 import os
 import resend
+import stripe
 from ..ai.groq_client import groq_client
 from ..ai.prompts import generate_nudge_prompt, NUDGE_SYSTEM_PROMPT
 from ..api.sse_manager import sse_manager
@@ -61,14 +62,47 @@ async def action_route_switch(transaction, diagnosis, spend_tracker):
     spend_tracker('routing_fee', 10)
     await simulate_delay(1200)
     
-    # Switching gateways is highly successful for gateway degradation
-    success = random.random() < 0.85
-    
+    # Generate a real Stripe Checkout Session for dynamic frontend fallback
+    try:
+        stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'inr',
+                    'unit_amount': int(transaction['amount']) * 100,
+                    'product_data': {
+                        'name': 'Premium Subscription (Fallback)',
+                        'description': f'Auto-routing failed transaction {transaction["id"]} away from Razorpay',
+                    },
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url="http://localhost:5173/?success=true",
+            cancel_url="http://localhost:5173/agent",
+            metadata={'original_transaction_id': transaction['id']}
+        )
+        print(f"[Stripe Fallback] Generated Checkout Session: {session.id}")
+        
+        # Broadcast the session ID to the frontend to trigger the UI intercept!
+        sse_manager.broadcast({
+            'type': 'STRIPE_FALLBACK',
+            'transactionId': transaction['id'],
+            'sessionId': session.id,
+            'url': session.url
+        })
+        success = True
+    except Exception as e:
+        print(f"[Stripe Fallback] Failed to generate session: {e}")
+        success = False
+        
     return {
         'actionType': 'ROUTE_SWITCH',
         'success': success,
         'cost': 10,
-        'newGateway': 'Backup_Gateway_1'
+        'newGateway': 'Stripe',
+        'url': session.url if success else None
     }
 
 async def action_escalate(transaction, diagnosis, spend_tracker):
@@ -88,12 +122,18 @@ async def dispatch_customer_notification(transaction, diagnosis):
     phone = transaction.get('customerInfo', {}).get('phone', 'Unknown')
     email = transaction.get('customerInfo', {}).get('id', 'Unknown')
     
+    # Dynamically change the link based on the strategy!
+    if diagnosis.get('strategy') == 'PAYMENT_DEGRADATION':
+        context_string = f"Razorpay is currently down. Give them this secure Stripe backup link to seamlessly complete their payment: https://checkout.stripe.com/pay/fallback_{transaction['id']}"
+    else:
+        context_string = f"Failed subscription renewal. Give them this exact recovery link to retry their payment: https://acmecorp.com/recover/{transaction['id']}"
+        
     try:
         prompt = generate_nudge_prompt({
             'customer_id': transaction['customerInfo']['id'],
             'reason': diagnosis['reason'],
             'amount': transaction['amount'],
-            'context_string': f"Failed subscription renewal. Give them this exact recovery link to retry their payment: https://acmecorp.com/recover/{transaction['id']}"
+            'context_string': context_string
         })
         nudge = await groq_client.analyze(NUDGE_SYSTEM_PROMPT, prompt)
     except Exception as e:
