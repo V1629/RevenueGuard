@@ -28,7 +28,7 @@ class Detector:
                 return { 'detected': True, 'riskType': 'SUBSCRIPTION_RISK', 'priority': 'HIGH' }
             
             if code == 'gateway_timeout' or reason == 'PROCESSOR_DOWN':
-                return { 'detected': True, 'riskType': 'GATEWAY_DEGRADATION', 'priority': 'CRITICAL' }
+                return { 'detected': True, 'riskType': 'GATEWAY_DEGRADATION', 'priority': 'HIGH' }
                 
             return { 'detected': True, 'riskType': 'PAYMENT_FAILURE', 'priority': 'MEDIUM' }
             
