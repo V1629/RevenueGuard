@@ -112,6 +112,43 @@ export default function StorePage() {
     }
   };
 
+  const handleSimulateOutage = async () => {
+    setLoading(true);
+    toast('Simulating a Razorpay server outage...', 'warning');
+    
+    try {
+      const response = await fetch('http://localhost:3001/api/payment/report-failure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razorpay_payment_id: 'pay_demo_timeout_' + Math.floor(Math.random() * 1000),
+          error_code: 'gateway_timeout',
+          error_reason: 'ACQUIRER_TIMEOUT',
+          error_description: 'The payment request timed out between the gateway and the acquiring bank servers.',
+          amount: 500000,
+          method: 'card',
+          bank: 'HDFC',
+          email: customerEmail,
+          phone: customerPhone
+        })
+      });
+      
+      const data = await response.json();
+      console.log("Outage simulated — agent triggered!", data);
+      
+      if (data.fallbackUrl) {
+         window.location.href = data.fallbackUrl;
+      } else {
+         toast('Agent did not return a Stripe fallback link (check backend logs)', 'error');
+         setLoading(false);
+      }
+    } catch (err) {
+      console.error("Failed to report outage:", err);
+      toast('Failed to reach backend API', 'error');
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
       
@@ -160,14 +197,24 @@ export default function StorePage() {
             </div>
           </div>
 
-          <button 
-            className="button-primary" 
-            style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
-            onClick={handleCheckout}
-            disabled={loading}
-          >
-            {loading ? 'Processing...' : 'Buy Now with Razorpay'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <button 
+              className="button-primary" 
+              style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+              onClick={handleCheckout}
+              disabled={loading}
+            >
+              {loading ? 'Processing...' : 'Buy Now with Razorpay'}
+            </button>
+            <button 
+              className="button-secondary" 
+              style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+              onClick={handleSimulateOutage}
+              disabled={loading}
+            >
+              Force Gateway Outage (Test Stripe Routing)
+            </button>
+          </div>
         </motion.div>
       </div>
 
