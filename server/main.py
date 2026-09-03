@@ -24,7 +24,7 @@ app.add_middleware(
 app.include_router(router)
 
 @app.on_event("startup")
-def startup_event():
+async def startup_event():
     # Database starts empty. User can seed from UI if needed for judges.
     print("Database is starting fresh.")
     print("==========================================")
@@ -32,6 +32,11 @@ def startup_event():
     print("   Running on http://localhost:3001       ")
     print("   SSE endpoint: /api/events              ")
     print("==========================================")
+    
+    # Start the Gateway Health Monitor in the background
+    import asyncio
+    from app.agent.gateway_monitor import gateway_monitor
+    asyncio.create_task(gateway_monitor.start_monitoring(interval_seconds=30))
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=3001, reload=True)
