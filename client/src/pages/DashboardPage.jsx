@@ -71,7 +71,7 @@ export default function DashboardPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
       <div>
         <h1>Revenue Recovery Overview</h1>
-        <p className="subtitle">Real-time metrics from the RevenueGuard Agent</p>
+        <p className="subtitle">Real-time metrics from the X.A.V.I.E.R. Agent</p>
       </div>
 
       <MetricsPanel metrics={metrics} />

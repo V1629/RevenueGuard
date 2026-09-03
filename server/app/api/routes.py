@@ -302,7 +302,7 @@ async def report_payment_failure(req: ReportFailureRequest):
     
     amount_inr = req.amount / 100 if req.amount > 0 else 5000  # Razorpay sends in paise
     
-    # Transform into our RevenueGuard transaction format
+    # Transform into our X.A.V.I.E.R. transaction format
     txn = {
         'id': f"txn_{uuid.uuid4().hex[:14]}",
         'razorpayPaymentId': req.razorpay_payment_id,

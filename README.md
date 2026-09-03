@@ -1,6 +1,6 @@
-# RevenueGuard AI
+# X.A.V.I.E.R.
 
-RevenueGuard is an autonomous AI agent system that detects payment failures, diagnoses the root cause using Llama-3 (via Groq), and orchestrates personalized recovery strategies — all bound by strict operational guardrails (Governance Layer).
+X.A.V.I.E.R. is an autonomous AI agent system that detects payment failures, diagnoses the root cause using Llama-3 (via Groq), and orchestrates personalized recovery strategies — all bound by strict operational guardrails (Governance Layer).
 
 Built for the **Google Deepmind Advanced Agentic Coding Assessment**.
 
@@ -39,7 +39,8 @@ You need two terminal windows to run both the client and the server.
 **Terminal 1 (Backend Server):**
 ```bash
 cd server
-npm start
+source venv/bin/activate
+uvicorn main:app --port 3001 --reload
 ```
 *The server will start on http://localhost:3001 and automatically seed 500 test transactions.*
 

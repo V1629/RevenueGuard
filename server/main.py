@@ -9,7 +9,7 @@ from app.data.seed_data import seed_database
 # Load environment variables
 load_dotenv()
 
-app = FastAPI(title="RevenueGuard AI", description="Agent Engine API")
+app = FastAPI(title="X.A.V.I.E.R.", description="Agent Engine API")
 
 # Setup CORS to allow React frontend (port 5173 or 5174)
 app.add_middleware(
@@ -28,7 +28,7 @@ def startup_event():
     # Database starts empty. User can seed from UI if needed for judges.
     print("Database is starting fresh.")
     print("==========================================")
-    print("   RevenueGuard AI — Agent Engine         ")
+    print("   X.A.V.I.E.R. — Agent Engine             ")
     print("   Running on http://localhost:3001       ")
     print("   SSE endpoint: /api/events              ")
     print("==========================================")

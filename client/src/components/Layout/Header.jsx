@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { AlertOctagon, RefreshCw } from 'lucide-react';
 import '../../styles/components.css';
 
-export default function Header({ title = "RevenueGuard AI", onKillSwitch, killSwitchActive, onResume }) {
+export default function Header({ title = "X.A.V.I.E.R.", onKillSwitch, killSwitchActive, onResume }) {
   return (
     <motion.header 
       className="header"

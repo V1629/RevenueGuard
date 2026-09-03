@@ -230,7 +230,7 @@ export default function StorePage() {
             <ShieldAlert size={20} /> Tester Cheat Sheet
           </h3>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-            To demonstrate RevenueGuard AI, click Buy Now and use one of these Test Cards to force a failure.
+            To demonstrate X.A.V.I.E.R., click Buy Now and use one of these Test Cards to force a failure.
           </p>
           
           <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>

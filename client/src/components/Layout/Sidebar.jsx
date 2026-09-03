@@ -27,7 +27,7 @@ export default function Sidebar({ killSwitchActive = false }) {
         <div className="logo-icon">
           <Activity size={20} />
         </div>
-        <div className="logo-text">RevenueGuard</div>
+        <div className="logo-text">X.A.V.I.E.R.</div>
       </div>
 
       <nav className="nav-links">
