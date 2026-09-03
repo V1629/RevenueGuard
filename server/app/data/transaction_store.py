@@ -25,5 +25,14 @@ class TransactionStore:
             return self.transactions[id]
         return None
 
+    def mark_recovered_via_link(self, txn_id):
+        """Mark a transaction as recovered when customer clicks the recovery link."""
+        if txn_id in self.transactions:
+            self.transactions[txn_id]['status'] = 'success'
+            self.transactions[txn_id]['agentStatus'] = 'RECOVERED'
+            self.transactions[txn_id]['recoveredVia'] = 'LINK_CONVERSION'
+            return self.transactions[txn_id]
+        return None
+
 # Singleton instance
 transaction_store = TransactionStore()

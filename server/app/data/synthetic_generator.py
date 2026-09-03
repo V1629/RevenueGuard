@@ -67,6 +67,7 @@ def generate_transaction(status):
             'id': f"cus_{uuid.uuid4().hex[:8]}",
             'isRepeat': random.random() > 0.6,
             'previousAttempts': random.randint(1, 4) if is_failed else 0,
+            'ltv': random.choice([5000, 12000, 25000, 50000, 80000, 150000]),
         },
         'metadata': {
             'device': random.choice(['mobile', 'desktop', 'tablet']),

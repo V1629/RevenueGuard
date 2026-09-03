@@ -9,6 +9,16 @@ from .strategies import strategies
 from .actions import dispatch_customer_notification
 
 class Orchestrator:
+    def _classify_customer(self, transaction):
+        """Classify customer into a tier based on LTV."""
+        ltv = transaction.get('customerInfo', {}).get('ltv', 0)
+        if ltv >= 100000:
+            return 'VIP'
+        elif ltv >= 25000:
+            return 'REGULAR'
+        else:
+            return 'NEW'
+
     async def process_batch(self, transactions):
         results = {
             'detected': 0,
@@ -70,6 +80,17 @@ class Orchestrator:
             
         # 3. Diagnosis Phase
         diagnosis = await diagnoser.diagnose(transaction)
+        
+        # 3.5 Customer Segmentation
+        tier = self._classify_customer(transaction)
+        transaction['customerTier'] = tier
+        
+        sse_manager.broadcast({
+            'type': 'CUSTOMER_SEGMENTED',
+            'transactionId': txn_id,
+            'tier': tier,
+            'ltv': transaction.get('customerInfo', {}).get('ltv', 0)
+        })
         
         # 4. Dispatch Email Notification (Guarantees exactly 1 email per failure)
         await dispatch_customer_notification(transaction, diagnosis)

@@ -33,7 +33,7 @@ async def action_nudge(transaction, diagnosis, spend_tracker):
             'customer_id': transaction['customerInfo']['id'],
             'reason': diagnosis['reason'],
             'amount': transaction['amount'],
-            'context_string': f"Failed subscription renewal. Give them this exact recovery link to retry their payment: https://acmecorp.com/recover/{transaction['id']}"
+            'context_string': f"Failed subscription renewal. Give them this exact recovery link to retry their payment: http://localhost:3001/api/recover/{transaction['id']}"
         })
         nudge = await groq_client.analyze(NUDGE_SYSTEM_PROMPT, prompt)
     except Exception as e:
@@ -124,9 +124,9 @@ async def dispatch_customer_notification(transaction, diagnosis):
     
     # Dynamically change the link based on the strategy!
     if diagnosis.get('strategy') == 'PAYMENT_DEGRADATION':
-        context_string = f"Razorpay is currently down. Give them this secure Stripe backup link to seamlessly complete their payment: https://checkout.stripe.com/pay/fallback_{transaction['id']}"
+        context_string = f"Razorpay is currently down. Give them this secure Stripe backup link to seamlessly complete their payment: http://localhost:3001/api/recover/{transaction['id']}"
     else:
-        context_string = f"Failed subscription renewal. Give them this exact recovery link to retry their payment: https://acmecorp.com/recover/{transaction['id']}"
+        context_string = f"Failed subscription renewal. Give them this exact recovery link to retry their payment: http://localhost:3001/api/recover/{transaction['id']}"
         
     try:
         prompt = generate_nudge_prompt({

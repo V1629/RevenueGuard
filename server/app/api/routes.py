@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from ..data.transaction_store import transaction_store
 from ..data.seed_data import seed_database
 from ..data.audit_store import audit_store
+from ..audit.audit_logger import audit_logger
 from ..governance.rules import governance
 from ..agent.orchestrator import orchestrator
 from .sse_manager import sse_manager
@@ -174,6 +175,11 @@ def get_audit_trail():
 def get_governance_status():
     return {"status": governance.get_status()}
 
+@router.get("/gateway/health")
+def get_gateway_health():
+    from ..agent.gateway_monitor import gateway_monitor
+    return {"gateways": gateway_monitor.get_status()}
+
 @router.post("/governance/kill-switch")
 def toggle_kill_switch(req: KillSwitchRequest):
     governance.toggle_kill_switch(req.active)
@@ -317,7 +323,8 @@ async def report_payment_failure(req: ReportFailureRequest):
             'id': req.email,
             'phone': req.phone,
             'isRepeat': False,
-            'previousAttempts': 1
+            'previousAttempts': 1,
+            'ltv': 50000  # Default LTV for live Razorpay customers (REGULAR tier)
         },
         'errorDetails': {
             'code': req.error_code,
@@ -349,4 +356,28 @@ async def report_payment_failure(req: ReportFailureRequest):
         "transactionId": txn['id'],
         "fallbackUrl": txn.get('fallbackUrl')
     }
+
+@router.get("/recover/{txn_id}")
+def recover_via_link(txn_id: str):
+    """
+    Called when a customer clicks the recovery link from a nudge email/SMS.
+    Marks the transaction as recovered and broadcasts an SSE event.
+    """
+    txn = transaction_store.mark_recovered_via_link(txn_id)
+    if not txn:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    # Broadcast recovery event to the live dashboard
+    sse_manager.broadcast({
+        'type': 'RECOVERED',
+        'transactionId': txn_id,
+        'amount': txn['amount'],
+        'action': 'LINK_CONVERSION'
+    })
+    
+    audit_logger.log_action(txn_id, 'LINK_CONVERSION', 'Success', f"Customer clicked recovery link. Recovered ₹{txn['amount']}")
+    
+    # Redirect customer to a success page
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="http://localhost:5173/?success=true")
 
