@@ -45,10 +45,25 @@ class Governance:
 
     def get_status(self):
         return {
-            'killSwitchActive': self.kill_switch_active,
-            'budget': self.daily_budget,
-            'spend': self.current_spend,
-            'spendPercent': (self.current_spend / self.daily_budget) * 100 if self.daily_budget > 0 else 0
+            'spendLimits': {
+                'dailyLimit': self.daily_budget,
+                'currentSpend': self.current_spend,
+                'utilizationPercent': round((self.current_spend / self.daily_budget) * 100) if self.daily_budget > 0 else 0
+            },
+            'killSwitch': {
+                'active': self.kill_switch_active,
+                'killedBy': 'System Admin' if self.kill_switch_active else '',
+                'reason': 'Manual Override via UI' if self.kill_switch_active else ''
+            },
+            'escalationRules': [
+                {'id': 1, 'name': 'High Value Transaction', 'priority': 'High', 'reason': f'Amount >= ₹{self.escalation_threshold_amount}'},
+                {'id': 2, 'name': 'Critical Degradation', 'priority': 'Critical', 'reason': 'System-wide gateway outage detected'},
+                {'id': 3, 'name': 'Fraud Suspicion', 'priority': 'Medium', 'reason': '>= 4 previous failed attempts by customer'}
+            ],
+            'stoppingRules': [
+                {'id': 1, 'name': 'Budget Exhaustion', 'reason': f'Daily AI spend exceeds ₹{self.daily_budget}'},
+                {'id': 2, 'name': 'Global Kill Switch', 'reason': 'Agent manually halted by operator'}
+            ]
         }
 
 governance = Governance()

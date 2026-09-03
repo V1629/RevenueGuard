@@ -10,7 +10,7 @@ export default function SettingsPage() {
     setLoading(true);
     fetch('http://localhost:3001/api/governance/status')
       .then(res => res.json())
-      .then(data => setGovernance(data))
+      .then(data => setGovernance(data.status || data))
       .finally(() => setLoading(false));
   };
 

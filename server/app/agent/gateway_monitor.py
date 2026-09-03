@@ -54,6 +54,10 @@ class GatewayMonitor:
         
         now = time.strftime('%H:%M:%S')
         
+        # Only log when status CHANGES (not every check)
+        rzp_was_healthy = self.status['razorpay']['healthy']
+        stripe_was_healthy = self.status['stripe']['healthy']
+        
         self.status['razorpay'].update({
             'healthy': rzp_result['healthy'],
             'lastChecked': now,
@@ -71,11 +75,16 @@ class GatewayMonitor:
             'gateways': self.status
         })
         
-        # Log warnings
-        if not rzp_result['healthy']:
-            print(f"[GatewayMonitor] ⚠️ Razorpay is DOWN at {now}", flush=True)
-        if not stripe_result['healthy']:
-            print(f"[GatewayMonitor] ⚠️ Stripe is DOWN at {now}", flush=True)
+        # Log only on status transitions
+        if rzp_was_healthy and not rzp_result['healthy']:
+            print(f"[GatewayMonitor] ⚠️ Razorpay went DOWN at {now}", flush=True)
+        elif not rzp_was_healthy and rzp_result['healthy']:
+            print(f"[GatewayMonitor] ✅ Razorpay is back UP at {now}", flush=True)
+        
+        if stripe_was_healthy and not stripe_result['healthy']:
+            print(f"[GatewayMonitor] ⚠️ Stripe went DOWN at {now}", flush=True)
+        elif not stripe_was_healthy and stripe_result['healthy']:
+            print(f"[GatewayMonitor] ✅ Stripe is back UP at {now}", flush=True)
     
     async def start_monitoring(self, interval_seconds=30):
         """Background loop that checks gateway health every N seconds."""
