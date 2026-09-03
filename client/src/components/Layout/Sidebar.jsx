@@ -5,7 +5,7 @@ import '../../styles/components.css';
 import { ShoppingCart } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/agent', label: 'Agent Console', icon: Activity },
   { path: '/audit', label: 'Audit Trail', icon: FileText },
   { path: '/simulator', label: 'Batch Simulator', icon: ShieldAlert },

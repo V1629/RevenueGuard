@@ -5,12 +5,30 @@ import Header from './components/Layout/Header';
 import NotificationToast, { toast } from './components/Layout/NotificationToast';
 
 // Placeholder Pages
+import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
 import AgentPage from './pages/AgentPage';
-import AuditPage from './pages/AuditPage';
-import SimulatorPage from './pages/SimulatorPage';
 import SettingsPage from './pages/SettingsPage';
 import StorePage from './pages/StorePage';
+
+// A layout component to wrap the Dashboard views
+function AppLayout({ killSwitchActive, handleKillSwitch, handleResume, children }) {
+  return (
+    <div className="app-container" style={{ flexDirection: 'column' }}>
+      <Header 
+        onKillSwitch={handleKillSwitch} 
+        onResume={handleResume}
+        killSwitchActive={killSwitchActive} 
+      />
+      <main className="main-content" style={{ marginLeft: 0 }}>
+        <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+          {children}
+        </div>
+      </main>
+      <NotificationToast />
+    </div>
+  );
+}
 
 function App() {
   const [killSwitchActive, setKillSwitchActive] = useState(false);
@@ -51,30 +69,24 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="app-container">
-        <Sidebar killSwitchActive={killSwitchActive} />
-        
-        <main className="main-content">
-          <Header 
-            onKillSwitch={handleKillSwitch} 
-            onResume={handleResume}
-            killSwitchActive={killSwitchActive} 
-          />
-          
-          <div className="page-container">
+      <Routes>
+        {/* All routes wrapped in the AppLayout for a consistent global Header */}
+        <Route path="/*" element={
+          <AppLayout 
+            killSwitchActive={killSwitchActive}
+            handleKillSwitch={handleKillSwitch}
+            handleResume={handleResume}
+          >
             <Routes>
-              <Route path="/" element={<DashboardPage />} />
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/agent" element={<AgentPage />} />
-              <Route path="/audit" element={<AuditPage />} />
-              <Route path="/simulator" element={<SimulatorPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/store" element={<StorePage />} />
             </Routes>
-          </div>
-        </main>
-        
-        <NotificationToast />
-      </div>
+          </AppLayout>
+        } />
+      </Routes>
     </BrowserRouter>
   );
 }
