@@ -10,7 +10,7 @@ export default function AuditPage() {
 
   const fetchAudit = () => {
     setLoading(true);
-    fetch('http://localhost:3001/api/audit/entries')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/audit/entries`)
       .then(res => res.json())
       .then(data => {
         setEntries(data.entries || []);

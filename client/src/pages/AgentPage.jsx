@@ -5,13 +5,13 @@ import BatchSimulator from '../components/Agent/BatchSimulator';
 import { toast } from '../components/Layout/NotificationToast';
 
 export default function AgentPage() {
-  const { events, connected, clearEvents } = useSSE('http://localhost:3001/api/events');
+  const { events, connected, clearEvents } = useSSE(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/events`);
   const [fallbackUrl, setFallbackUrl] = useState(null);
   const [auditEntries, setAuditEntries] = useState([]);
   
   // Fetch persisted audit log on mount so we always have past data
   useEffect(() => {
-    fetch('http://localhost:3001/api/audit/entries')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/audit/entries`)
       .then(res => res.json())
       .then(data => {
         if (data.entries && data.entries.length > 0) {

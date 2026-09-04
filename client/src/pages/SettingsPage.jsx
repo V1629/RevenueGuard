@@ -8,7 +8,7 @@ export default function SettingsPage() {
 
   const fetchGovernance = () => {
     setLoading(true);
-    fetch('http://localhost:3001/api/governance/status')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/governance/status`)
       .then(res => res.json())
       .then(data => setGovernance(data.status || data))
       .finally(() => setLoading(false));

@@ -84,7 +84,7 @@ export default function StorePage() {
 
     setLoading(product.id);
     try {
-      const res = await fetch('http://localhost:3001/api/payment/create-order', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/payment/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: product.price, currency: 'INR' })
@@ -115,7 +115,7 @@ export default function StorePage() {
         rzp.close();
 
         try {
-          await fetch('http://localhost:3001/api/payment/report-failure', {
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/payment/report-failure`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -151,7 +151,7 @@ export default function StorePage() {
     toast('Simulating a Razorpay server outage...', 'warning');
 
     try {
-      const response = await fetch('http://localhost:3001/api/payment/report-failure', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/payment/report-failure`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -162,8 +162,8 @@ async def dispatch_customer_notification(transaction, diagnosis):
                 "html": f"<p>{nudge.get('content')}</p>"
             }
             # Temporarily disabled actual email sending for testing
-            # resend.Emails.send(params)
-            print(f"[Resend] (MOCKED) Successfully simulated sending email to {email}!")
+            resend.Emails.send(params)
+            print(f"[Resend] Successfully sent email to {email}!")
         except Exception as e:
             print(f"[Resend] Failed to send email: {e}")
             

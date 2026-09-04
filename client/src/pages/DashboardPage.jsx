@@ -13,7 +13,7 @@ export default function DashboardPage() {
     let source;
     
     // Fetch initial metrics
-    fetch('http://localhost:3001/api/metrics/summary')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/metrics/summary`)
       .then(res => res.json())
       .then(data => setMetrics(data))
       .catch(err => {
@@ -21,20 +21,20 @@ export default function DashboardPage() {
         setError(err.message);
       });
       
-    fetch('http://localhost:3001/api/gateway/health')
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/gateway/health`)
       .then(res => res.json())
       .then(data => setGatewayHealth(data.gateways))
       .catch(() => {});
       
     // Listen for SSE updates
     try {
-      source = new EventSource('http://localhost:3001/api/events');
+      source = new EventSource(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/events`);
       
       source.onmessage = (e) => {
         try {
           const event = JSON.parse(e.data);
           if (['RECOVERED', 'BATCH_COMPLETE', 'STOPPED', 'ESCALATED'].includes(event.type)) {
-            fetch('http://localhost:3001/api/metrics/summary')
+            fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/metrics/summary`)
               .then(res => res.json())
               .then(data => setMetrics(data))
               .catch(() => {});

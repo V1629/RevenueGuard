@@ -13,7 +13,7 @@ export default function BatchSimulator({ onClearFeed }) {
     if (onClearFeed) onClearFeed();
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/agent/run-batch', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/agent/run-batch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ batchSize, generateNew: true })
@@ -33,7 +33,7 @@ export default function BatchSimulator({ onClearFeed }) {
   const seedDatabase = async () => {
     setSeeding(true);
     try {
-      const res = await fetch('http://localhost:3001/api/agent/seed', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/agent/seed`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ size: 500 })
