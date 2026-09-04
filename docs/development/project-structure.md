@@ -4,7 +4,7 @@ X.A.V.I.E.R. follows a clear client-server monorepo structure.
 
 ## Root Level
 ```text
-revenueguard/
+X.A.V.I.E.R./
 ├── client/           # React frontend (Vite)
 ├── server/           # FastAPI Python backend
 ├── docs/             # This documentation

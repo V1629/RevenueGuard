@@ -1,6 +1,6 @@
 # X.A.V.I.E.R. Documentation
 
-Welcome to the official documentation for **X.A.V.I.E.R.** (RevenueGuard). 
+Welcome to the official documentation for **X.A.V.I.E.R.**
 
 X.A.V.I.E.R. is an orchestrator that operates much like a state machine or workflow engine, specifically tailored for e-commerce payment failure recovery. It uses LLMs to diagnose cryptic bank error codes, routes traffic around degraded gateways, and dispatches hyper-personalized recovery nudges to customers based on their Lifetime Value (LTV).
 
