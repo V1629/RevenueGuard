@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/V1629/X.A.V.I.E.R./main/client/public/favicon.svg" alt="X.A.V.I.E.R. Logo" width="120" />
+  <img src="https://raw.githubusercontent.com/V1629/X.A.V.I.E.R./main/client/public/logo.png" alt="X.A.V.I.E.R. Logo" width="150" style="border-radius: 50%;" />
 
   <h1 align="center">X.A.V.I.E.R.</h1>
   <p align="center">
@@ -22,19 +22,19 @@
 
 ---
 
-## ⚡ Powering Modern Payments
+## Powering Modern Payments
 
 X.A.V.I.E.R. is not just a dashboard—it's an autonomous orchestrator. When a transaction fails, it catches the webhook, uses a Large Language Model (like Llama-3 via Groq) to decipher cryptic bank error codes, and automatically executes a recovery strategy without human intervention.
 
-### ✨ Features
-- 🧠 **AI Diagnoser:** Translates `E001` or `INSUFFICIENT_FUNDS` into actionable recovery steps.
-- 🚦 **Smart Routing:** Detects when a primary gateway (Razorpay) is experiencing downtime and seamlessly generates a fallback session (Stripe).
-- ✉️ **Hyper-Personalized Nudges:** Dispatches tailored recovery emails via Resend based on the customer's exact failure reason.
-- 🛡️ **Governance Engine:** Built-in safeguards including daily spend limits and kill switches.
+### Features
+- **AI Diagnoser:** Translates `E001` or `INSUFFICIENT_FUNDS` into actionable recovery steps.
+- **Smart Routing:** Detects when a primary gateway (Razorpay) is experiencing downtime and seamlessly generates a fallback session (Stripe).
+- **Hyper-Personalized Nudges:** Dispatches tailored recovery emails via Resend based on the customer's exact failure reason.
+- **Governance Engine:** Built-in safeguards including daily spend limits and kill switches.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 <div align="center">
   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
@@ -49,7 +49,7 @@ X.A.V.I.E.R. is not just a dashboard—it's an autonomous orchestrator. When a t
 
 ---
 
-## 🚀 60-Second Quickstart
+## 60-Second Quickstart
 
 **1. Clone the Repository**
 ```bash
@@ -78,22 +78,22 @@ Visit `http://localhost:5173` to view the beautiful Agent Terminal Dashboard!
 
 ---
 
-## 📚 Extensive Documentation
+## Extensive Documentation
 
 X.A.V.I.E.R. is fully documented. Dive into the complete open-source-grade documentation set to learn how the orchestrator works under the hood.
 
-👉 **[Enter the Documentation Hub](docs/README.md)** 👈
+**[Enter the Documentation Hub](docs/README.md)**
 
 | Section | Description |
 |---------|-------------|
-| ⚙️ **[Getting Started](docs/getting-started/installation.md)** | Step-by-step installation, `.env` config, and seeding data. |
-| 🏛️ **[Architecture](docs/architecture/overview.md)** | High-level system design, Agent pipeline, and sequence diagrams. |
-| 🔌 **[API Reference](docs/api-reference/rest-endpoints.md)** | Full REST endpoints mapping and Realtime SSE event schemas. |
-| 💻 **[Frontend](docs/frontend/overview.md)** | React component structure and hybrid SSE/REST data flow. |
-| 🛠️ **[Development](docs/development/extending.md)** | How to extend X.A.V.I.E.R. with new gateways and recovery strategies. |
+| **[Getting Started](docs/getting-started/installation.md)** | Step-by-step installation, `.env` config, and seeding data. |
+| **[Architecture](docs/architecture/overview.md)** | High-level system design, Agent pipeline, and sequence diagrams. |
+| **[API Reference](docs/api-reference/rest-endpoints.md)** | Full REST endpoints mapping and Realtime SSE event schemas. |
+| **[Frontend](docs/frontend/overview.md)** | React component structure and hybrid SSE/REST data flow. |
+| **[Development](docs/development/extending.md)** | How to extend X.A.V.I.E.R. with new gateways and recovery strategies. |
 
 ---
 
 <div align="center">
-  <p>Built with ❤️ for autonomous agents.</p>
+  <p>Built for autonomous agents.</p>
 </div>
