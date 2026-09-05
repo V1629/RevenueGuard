@@ -94,7 +94,7 @@ def get_metrics():
     
     failed = [t for t in txns if t['status'] != 'success' and t.get('agentStatus') != 'RECOVERED']
     recovered = [t for t in txns if t.get('agentStatus') == 'RECOVERED']
-    successes = [t for t in txns if t['status'] == 'success']
+    successes = [t for t in txns if t['status'] == 'success' and t.get('agentStatus') != 'RECOVERED']
     escalated = [t for t in txns if t.get('agentStatus') == 'ESCALATED']
     stopped = [t for t in txns if t.get('agentStatus') == 'STOPPED']
     
